@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Randle Children Book Drive</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #FFD43B; --orange: #FF6B35; --teal: #00B4A6;
+    --blue: #3A86FF; --pink: #FF6B9D; --green: #52C41A;
+    --purple: #845EF7; --cream: #FFFBF0; --dark: #1A1A2E;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Nunito',sans-serif; background:var(--cream); color:var(--dark); overflow-x:hidden; }
+
+  /* LOADING */
+  .loading-overlay {
+    display:none; position:fixed; inset:0; background:rgba(255,251,240,0.9);
+    z-index:2000; align-items:center; justify-content:center; flex-direction:column; gap:16px;
+  }
+  .loading-overlay.open { display:flex; }
+  .spinner { width:52px; height:52px; border:5px solid #eee; border-top-color:var(--orange); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-family:'Fredoka One',cursive; font-size:1.3rem; color:var(--orange); }
+
+  /* MODAL */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55);
+    z-index:1000; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:white; border-radius:24px; padding:36px 28px; max-width:460px; width:100%;
+    text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:popIn .25s ease;
+  }
+  @keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+  .modal .modal-emoji { font-size:2.6rem; margin-bottom:12px; }
+  .modal h2 { font-family:'Fredoka One',cursive; font-size:1.8rem; color:var(--dark); margin-bottom:8px; }
+  .modal .modal-book { font-weight:800; color:var(--orange); font-size:1.05rem; margin-bottom:10px; line-height:1.4; }
+  .modal p { color:#555; font-size:0.95rem; margin-bottom:22px; line-height:1.5; }
+  .modal-btns { display:flex; flex-direction:column; gap:10px; }
+  .modal-confirm {
+    background:var(--green); color:white; border:none; font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:1rem; padding:14px; border-radius:50px; cursor:pointer;
+    box-shadow:0 4px 14px rgba(82,196,26,.35); transition:background .2s;
+  }
+  .modal-confirm:hover { background:#3da312; }
+  .modal-cancel {
+    background:#f0f0f0; color:#666; border:none; font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:.9rem; padding:12px; border-radius:50px; cursor:pointer;
+  }
+  .modal-cancel:hover { background:#e0e0e0; }
+
+  /* HERO */
+  .hero {
+    background:linear-gradient(135deg,#FFD43B 0%,#FF6B35 40%,#FF6B9D 70%,#845EF7 100%);
+    padding:60px 20px 80px; text-align:center; position:relative; overflow:hidden;
+  }
+  .hero::before,.hero::after {
+    content:'📚 📖 📚 📖 📚 📖 📚 📖 📚 📖 📚';
+    position:absolute; left:0; right:0; font-size:1.4rem; opacity:.22; letter-spacing:8px; white-space:nowrap;
+  }
+  .hero::before { top:10px; } .hero::after { bottom:10px; }
+  .hero-badge {
+    display:inline-block; background:white; color:var(--orange); font-family:'Fredoka One',cursive;
+    font-size:.95rem; letter-spacing:2px; padding:6px 18px; border-radius:50px;
+    margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,.15); text-transform:uppercase;
+  }
+  .hero h1 { font-family:'Fredoka One',cursive; font-size:clamp(2.4rem,7vw,5rem); color:white; text-shadow:4px 4px 0 rgba(0,0,0,.15); line-height:1.1; margin-bottom:16px; }
+  .hero h1 span { display:block; font-size:clamp(1.6rem,4vw,2.8rem); color:var(--yellow); text-shadow:3px 3px 0 rgba(0,0,0,.2); }
+  .hero-dates { display:inline-block; background:white; color:var(--dark); font-weight:800; font-size:1.1rem; padding:12px 30px; border-radius:50px; margin:20px 0; box-shadow:0 6px 20px rgba(0,0,0,.2); }
+  .hero-tagline { color:rgba(255,255,255,.92); font-size:1.15rem; font-weight:700; max-width:580px; margin:0 auto; line-height:1.5; }
+
+  /* CONTACT */
+  .contact-banner { background:var(--teal); padding:18px 20px; text-align:center; color:white; font-weight:800; font-size:1rem; }
+  .contact-banner a { color:var(--yellow); text-decoration:none; }
+
+  /* IN-PERSON DEAL */
+  .deal-section { background:linear-gradient(135deg,#52C41A,#00B4A6); padding:40px 20px; text-align:center; }
+  .deal-card { max-width:720px; margin:0 auto; background:white; border-radius:24px; padding:32px 28px; box-shadow:0 8px 30px rgba(0,0,0,.15); }
+  .deal-card h2 { font-family:'Fredoka One',cursive; font-size:clamp(1.5rem,4vw,2.2rem); color:#52C41A; margin-bottom:8px; }
+  .deal-card p { font-size:1.05rem; font-weight:700; color:#333; margin-bottom:16px; line-height:1.5; }
+  .store-info { background:#F0FFF4; border:2px solid #52C41A; border-radius:14px; padding:16px 20px; display:inline-block; text-align:left; }
+  .store-info h3 { font-family:'Fredoka One',cursive; font-size:1.1rem; color:#2D6A4F; margin-bottom:6px; }
+  .store-info p { font-size:.92rem; color:#555; font-weight:700; line-height:1.8; }
+  .store-info a { color:var(--teal); text-decoration:none; }
+  .deal-note { margin-top:14px; font-size:.82rem; color:#999; }
+
+  /* HOW IT WORKS */
+  .how-section { background:white; padding:60px 20px; text-align:center; }
+  .section-title { font-family:'Fredoka One',cursive; font-size:clamp(1.8rem,4vw,2.6rem); margin-bottom:10px; }
+  .section-title.teal{color:var(--teal);} .section-title.orange{color:var(--orange);} .section-title.purple{color:var(--purple);}
+  .section-subtitle { color:#666; font-size:1rem; margin-bottom:40px; font-weight:600; }
+  .steps { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; max-width:1000px; margin:0 auto; }
+  .step { background:var(--cream); border-radius:20px; padding:26px 20px; flex:1 1 180px; max-width:210px; border:3px solid transparent; transition:transform .2s; }
+  .step:hover{transform:translateY(-6px);}
+  .step:nth-child(1){border-color:var(--yellow);} .step:nth-child(2){border-color:var(--teal);} .step:nth-child(3){border-color:var(--green);} .step:nth-child(4){border-color:var(--pink);}
+  .step .icon{font-size:2.6rem;margin-bottom:10px;} .step h3{font-family:'Fredoka One',cursive;font-size:1.15rem;margin-bottom:6px;} .step p{font-size:.88rem;color:#555;line-height:1.5;}
+
+  /* PROGRESS */
+  .progress-section { background:var(--dark); padding:40px 20px; text-align:center; color:white; }
+  .progress-section h2 { font-family:'Fredoka One',cursive; font-size:2rem; color:var(--yellow); margin-bottom:6px; }
+  .progress-section p { color:rgba(255,255,255,.7); margin-bottom:20px; font-weight:600; font-size:1rem; }
+  .progress-bar-wrap { max-width:600px; margin:0 auto; background:rgba(255,255,255,.12); border-radius:50px; height:28px; overflow:hidden; }
+  .progress-bar { height:100%; border-radius:50px; background:linear-gradient(90deg,var(--green),var(--teal)); transition:width .8s ease; min-width:4px; }
+  .progress-labels { display:flex; justify-content:space-between; max-width:600px; margin:10px auto 0; font-size:.82rem; color:rgba(255,255,255,.5); font-weight:700; }
+
+  /* FILTERS */
+  .filters-section { padding:50px 20px 20px; text-align:center; background:var(--cream); }
+  .filter-buttons { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:20px; }
+  .filter-btn { padding:10px 22px; border-radius:50px; border:3px solid transparent; font-family:'Nunito',sans-serif; font-weight:800; font-size:.9rem; cursor:pointer; transition:all .2s; }
+  .filter-btn.active,.filter-btn:hover{transform:scale(1.05);}
+  .filter-btn[data-filter="all"]{background:var(--dark);color:white;border-color:var(--dark);}
+  .filter-btn[data-filter="Young Readers"]{background:#FFF3CD;color:var(--orange);border-color:var(--orange);}
+  .filter-btn[data-filter="3rd-5th"]{background:#D3F9D8;color:var(--green);border-color:var(--green);}
+  .filter-btn[data-filter="6th-8th"]{background:#E8D5FF;color:var(--purple);border-color:var(--purple);}
+  .filter-btn[data-filter="9th-12th"]{background:#FFD6E5;color:var(--pink);border-color:var(--pink);}
+  .filter-btn[data-filter="Spanish"]{background:#D0EBFF;color:var(--blue);border-color:var(--blue);}
+
+  /* BOOKS */
+  .books-section { padding:30px 20px 60px; background:var(--cream); max-width:1300px; margin:0 auto; }
+  .grade-group { margin-bottom:50px; }
+  .grade-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; padding:14px 24px; border-radius:16px; color:white; font-family:'Fredoka One',cursive; font-size:1.4rem; }
+  .grade-header.young{background:linear-gradient(135deg,var(--orange),var(--yellow));}
+  .grade-header.grade35{background:linear-gradient(135deg,var(--green),var(--teal));}
+  .grade-header.grade68{background:linear-gradient(135deg,var(--purple),var(--blue));}
+  .grade-header.grade912{background:linear-gradient(135deg,var(--pink),var(--orange));}
+  .grade-header.spanish{background:linear-gradient(135deg,var(--blue),var(--teal));}
+  .grade-header .grade-count { margin-left:auto; background:rgba(255,255,255,.3); padding:4px 14px; border-radius:50px; font-size:.9rem; }
+  .book-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
+
+  /* BOOK CARD */
+  .book-card { background:white; border-radius:18px; padding:20px; box-shadow:0 4px 14px rgba(0,0,0,.07); border:2px solid #F0F0F0; transition:transform .2s,box-shadow .2s; display:flex; flex-direction:column; gap:10px; }
+  .book-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,.12);}
+  .book-card.fully-purchased{background:linear-gradient(135deg,#F0FFF4,#E6FFFA);border-color:var(--green);}
+  .book-title{font-family:'Fredoka One',cursive;font-size:1.05rem;line-height:1.3;color:var(--dark);}
+  .book-author{font-size:.85rem;color:#777;font-weight:700;}
+  .book-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .tag{padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:800;}
+  .tag.format{background:#FFF3CD;color:#B45309;} .tag.price{background:#D3F9D8;color:#2D6A4F;}
+  .book-isbn{font-size:.72rem;color:#bbb;font-family:monospace;}
+
+  /* NEED COUNTER */
+  .need-counter{display:flex;align-items:center;gap:8px;background:#FFF8F0;border-radius:10px;padding:8px 12px;font-weight:800;font-size:.88rem;}
+  .need-dots{display:flex;gap:5px;}
+  .need-dot{width:18px;height:18px;border-radius:50%;border:2px solid #ddd;background:white;transition:all .3s;}
+  .need-dot.open{background:white;border-color:#FFC0A0;}
+  .need-dot.done{background:var(--green);border-color:var(--green);}
+
+  /* BUTTONS */
+  .btn-row{display:flex;flex-direction:column;gap:8px;margin-top:auto;}
+  .buy-btn{display:inline-block;font-family:'Nunito',sans-serif;font-weight:800;font-size:.88rem;padding:10px 18px;border-radius:50px;text-decoration:none;text-align:center;transition:background .2s,transform .15s;cursor:pointer;border:none;width:100%;}
+  .btn-online{background:var(--orange);color:white;box-shadow:0 4px 10px rgba(255,107,53,.3);}
+  .btn-online:hover{background:#e55a24;transform:scale(1.03);}
+  .btn-instore{background:var(--green);color:white;box-shadow:0 4px 10px rgba(82,196,26,.3);}
+  .btn-instore:hover{background:#3da312;transform:scale(1.03);}
+  .btn-mark-online{background:var(--blue);color:white;box-shadow:0 4px 10px rgba(58,134,255,.3);}
+  .btn-mark-online:hover{background:#2a72e5;transform:scale(1.03);}
+  .btn-unavail{background:#ddd;color:#999;box-shadow:none;cursor:not-allowed;pointer-events:none;}
+
+  /* PURCHASED STATE */
+  .purchased-message{background:linear-gradient(135deg,#52C41A,#00B4A6);color:white;border-radius:14px;padding:18px;text-align:center;}
+  .purchased-message .p-emoji{font-size:2rem;display:block;margin-bottom:6px;}
+  .purchased-message .p-title{font-family:'Fredoka One',cursive;font-size:1.15rem;margin-bottom:4px;}
+  .purchased-message .p-sub{font-size:.85rem;font-weight:700;opacity:.9;margin-bottom:12px;}
+  .choose-another-btn{display:inline-block;background:white;color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:.82rem;padding:8px 18px;border-radius:50px;border:none;cursor:pointer;transition:transform .2s;}
+  .choose-another-btn:hover{transform:scale(1.05);}
+
+  footer{background:var(--dark);color:rgba(255,255,255,.8);text-align:center;padding:40px 20px;}
+  footer .footer-logo{font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--yellow);margin-bottom:8px;}
+  footer p{font-size:.9rem;line-height:1.8;}
+  footer a{color:var(--teal);text-decoration:none;font-weight:700;}
+  .hidden{display:none!important;}
+  @media(max-width:600px){.book-grid{grid-template-columns:1fr;}.steps{flex-direction:column;align-items:center;}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Loading book drive...</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-emoji">📚</div>
+    <h2>Confirm Donation!</h2>
+    <div class="modal-book" id="modalBookTitle"></div>
+    <p id="modalDesc"></p>
+    <div class="modal-btns">
+      <button class="modal-confirm" id="modalConfirmBtn">✅ Yes, I Purchased This Book!</button>
+      <button class="modal-cancel" onclick="closeModal()">← Go Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">📚 Community Book Drive</div>
+  <h1>Randle Children<span>Book Drive</span></h1>
+  <div class="hero-dates">📅 May 6th – May 27th, 2025</div>
+  <p class="hero-tagline">Help put books in the hands of children who need them most. Browse below and buy online or in person at Barnes & Noble!</p>
+</section>
+
+<div class="contact-banner">
+  Questions? Contact us at <a href="mailto:LErickso@lhs.org">LErickso@lhs.org</a>
+</div>
+
+<!-- IN-PERSON DEAL -->
+<section class="deal-section">
+  <div class="deal-card">
+    <div style="font-size:2.5rem;margin-bottom:10px;">🏷️</div>
+    <h2>20% Off In-Person!</h2>
+    <p>Purchase any book on this list <em>in person</em> at <strong>Barnes & Noble Cascade Station</strong> and receive <strong>20% off</strong> your purchase!</p>
+    <div class="store-info">
+      <h3>📍 Barnes & Noble — Cascade Station</h3>
+      <p>877 NE Airport Way<br>Portland, OR 97220<br>
+      <a href="https://stores.barnesandnoble.com/store/2423" target="_blank" rel="noopener">View Store Page →</a></p>
+    </div>
+    <p class="deal-note">Mention the Randle Children Book Drive at checkout to receive your discount.</p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section">
+  <div class="section-title teal">How It Works</div>
+  <p class="section-subtitle">Two ways to give — online or in person!</p>
+  <div class="steps">
+    <div class="step"><div class="icon">🔍</div><h3>Browse the List</h3><p>Find a book by age group or language below.</p></div>
+    <div class="step"><div class="icon">🛒</div><h3>Buy Online or In-Store</h3><p>Order on B&N.com — or visit Cascade Station in Portland for <strong>20% off</strong>!</p></div>
+    <div class="step"><div class="icon">✅</div><h3>Mark It Purchased</h3><p>Click the button on the card so everyone knows it's been claimed.</p></div>
+    <div class="step"><div class="icon">💛</div><h3>Make an Impact</h3><p>Books go directly to children in our community.</p></div>
+  </div>
+</section>
+
+<!-- PROGRESS -->
+<section class="progress-section">
+  <h2>📊 Drive Progress</h2>
+  <p id="progressLabel">Loading...</p>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-labels"><span>0 books</span><span id="progressTotal">— books needed</span></div>
+</section>
+
+<!-- FILTERS -->
+<section class="filters-section" id="filtersSection">
+  <div class="section-title orange">Browse Books by Group</div>
+  <div class="filter-buttons">
+    <button class="filter-btn active" data-filter="all" onclick="filterBooks('all')">📚 All Books</button>
+    <button class="filter-btn" data-filter="Young Readers" onclick="filterBooks('Young Readers')">🌟 Young Readers</button>
+    <button class="filter-btn" data-filter="3rd-5th" onclick="filterBooks('3rd-5th')">📗 3rd–5th Grade</button>
+    <button class="filter-btn" data-filter="6th-8th" onclick="filterBooks('6th-8th')">📘 6th–8th Grade</button>
+    <button class="filter-btn" data-filter="9th-12th" onclick="filterBooks('9th-12th')">📙 9th–12th Grade</button>
+    <button class="filter-btn" data-filter="Spanish" onclick="filterBooks('Spanish')">🌎 Spanish</button>
+  </div>
+</section>
+
+<!-- BOOKS -->
+<main class="books-section">
+  <div class="grade-group" data-group="Young Readers">
+    <div class="grade-header young"><span>🌟</span> Young Readers — English <span class="grade-count" id="hdr-young"></span></div>
+    <div class="book-grid" id="young-english"></div>
+  </div>
+  <div class="grade-group" data-group="3rd-5th">
+    <div class="grade-header grade35"><span>📗</span> 3rd–5th Grade — English <span class="grade-count" id="hdr-35"></span></div>
+    <div class="book-grid" id="grade35-english"></div>
+  </div>
+  <div class="grade-group" data-group="6th-8th">
+    <div class="grade-header grade68"><span>📘</span> 6th–8th Grade — English <span class="grade-count" id="hdr-68"></span></div>
+    <div class="book-grid" id="grade68-english"></div>
+  </div>
+  <div class="grade-group" data-group="9th-12th">
+    <div class="grade-header grade912"><span>📙</span> 9th–12th Grade — English <span class="grade-count" id="hdr-912"></span></div>
+    <div class="book-grid" id="grade912-english"></div>
+  </div>
+  <div class="grade-group" data-group="Spanish">
+    <div class="grade-header spanish"><span>🌎</span> Spanish Language Books <span class="grade-count" id="hdr-sp"></span></div>
+    <div class="book-grid" id="spanish-books"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-logo">📚 Randle Children Book Drive</div>
+  <p>May 6th – May 27th, 2025</p>
+  <p>Contact: <a href="mailto:LErickso@lhs.org">LErickso@lhs.org</a></p>
+  <p style="margin-top:12px;font-size:.8rem;color:rgba(255,255,255,.4);">Books purchased via Barnes & Noble. Thank you for your generosity!</p>
+</footer>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────
+const bnBase = "https://www.barnesandnoble.com/w/?ean=";
+const hasBnLink = isbn => isbn && !isbn.toLowerCase().includes("not");
+
+const ALL_BOOKS = [
+  {id:"yr1", g:"Young Readers", title:"Waiting Is Not Easy!", author:"Mo Willems", isbn:"9781423199571", price:"10.99", format:"Hardcover", qty:2},
+  {id:"yr2", g:"Young Readers", title:"Can I Play Too?", author:"Mo Willems", isbn:"9781423119913", price:"10.99", format:"Hardcover", qty:2},
+  {id:"yr3", g:"Young Readers", title:"An Elephant & Piggie Biggie!", author:"Mo Willems", isbn:"9781368108980", price:"19.99", format:"Hardcover", qty:2},
+  {id:"yr4", g:"Young Readers", title:"Should I Share My Ice Cream?", author:"Mo Willems", isbn:"9781423143437", price:"10.99", format:"Hardcover", qty:2},
+  {id:"yr5", g:"Young Readers", title:"How I Trained my Dog in Ten Days", author:"Norma Lewis", isbn:"9781441332646", price:"16.99", format:"Hardcover", qty:2},
+  {id:"yr6", g:"Young Readers", title:"Can I be Your Dog?", author:"Troy Cummings", isbn:"9780399554520", price:"18.99", format:"Hardcover", qty:2},
+  {id:"yr7", g:"Young Readers", title:"Bad Dog", author:"Mike Boldt", isbn:"9781984847973", price:"18.99", format:"Hardcover", qty:2},
+  {id:"yr8", g:"Young Readers", title:"The Ship in the Window", author:"Travis Jonker", isbn:"9780593350577", price:"18.99", format:"Hardcover", qty:2},
+  {id:"yr9", g:"Young Readers", title:"Bookie and Cookie", author:"Blanca Gomez", isbn:"9780593696804", price:"18.99", format:"Hardcover", qty:2},
+  {id:"g351", g:"3rd-5th", title:"Better with Butter", author:"Victoria Piontek", isbn:"9781338662214", price:"8.99", format:"Paperback", qty:2},
+  {id:"g352", g:"3rd-5th", title:"Escape from Mr. Lemoncello's Library", author:"Chris Grabenstein", isbn:"9780307931474", price:"8.99", format:"Paperback", qty:2},
+  {id:"g353", g:"3rd-5th", title:"Odder", author:"Katherine Applegate", isbn:"9781250423429", price:"", format:"Paperback", qty:2},
+  {id:"g354", g:"3rd-5th", title:"The Secret Garden on 81st Street", author:"Ivy Noelle Weir and Amber Padilla", isbn:"9780316459709", price:"13.99", format:"Paperback", qty:2},
+  {id:"g355", g:"3rd-5th", title:"Elf Dog and Owl Head", author:"M. T. Anderson", isbn:"9781536235166", price:"9.99", format:"Paperback", qty:2},
+  {id:"g356", g:"3rd-5th", title:"The Lost Library", author:"Rebecca Stead and Wendy Mass", isbn:"9781250838834", price:"8.99", format:"Paperback", qty:2},
+  {id:"g357", g:"3rd-5th", title:"Squished", author:"Megan Wagner Lloyd and Michelle Mee Nutter", isbn:"9781338568936", price:"12.99", format:"Paperback", qty:2},
+  {id:"g358", g:"3rd-5th", title:"The Million Dollar Race", author:"Matthew Ross Smith", isbn:"9781534420281", price:"8.99", format:"Paperback", qty:2},
+  {id:"g359", g:"3rd-5th", title:"Finding Langston", author:"Lesa Cline-Ransome", isbn:"9780823445820", price:"8.99", format:"Paperback", qty:2},
+  {id:"g3510",g:"3rd-5th", title:"Hatchet", author:"Gary Paulsen", isbn:"9781416936473", price:"8.99", format:"Paperback", qty:2},
+  {id:"g3511",g:"3rd-5th", title:"Inside Out and Back Again", author:"Thanhhà Lại", isbn:"9780061962790", price:"9.99", format:"Paperback", qty:2},
+  {id:"g3512",g:"3rd-5th", title:"Just Like Click", author:"Sandy Grubb", isbn:"9781646034390", price:"12.95", format:"Paperback", qty:2},
+  {id:"g3513",g:"3rd-5th", title:"The Remarkable Rescue at Milkweed Meadow", author:"Elaine Dimopoulos", isbn:"9781623545857", price:"10.99", format:"Paperback", qty:2},
+  {id:"g3514",g:"3rd-5th", title:"The Tail of Emily Windsnap", author:"Liz Kessler", isbn:"9780763660208", price:"6.99", format:"Paperback", qty:2},
+  {id:"g3515",g:"3rd-5th", title:"The City of Ember", author:"Jeanne DuPrau", isbn:"9780375822742", price:"8.99", format:"Paperback", qty:2},
+  {id:"g3516",g:"3rd-5th", title:"Number the Stars", author:"Lois Lowry", isbn:"9780547577098", price:"9.99", format:"Paperback", qty:2},
+  {id:"g3517",g:"3rd-5th", title:"Dogtown", author:"Katherine Applegate", isbn:"9781250811622", price:"8.99", format:"Paperback", qty:2},
+  {id:"g3518",g:"3rd-5th", title:"The Academy", author:"TZ Layton", isbn:"9781464267109", price:"9.99", format:"Paperback", qty:2},
+  {id:"g3519",g:"3rd-5th", title:"Mr. Wolf's Class", author:"Aron Nels Steinke", isbn:"9781338047684", price:"9.99", format:"Paperback", qty:2},
+  {id:"g681", g:"6th-8th", title:"Projekt 1065", author:"Alan Gratz", isbn:"9780545880169", price:"18.99", format:"Hardcover", qty:2},
+  {id:"g682", g:"6th-8th", title:"A Dictionary of Scoundrels", author:"Beth Lincoln", isbn:"9780593533253", price:"9.99", format:"Paperback", qty:2},
+  {id:"g683", g:"6th-8th", title:"An Occasionally Happy Family", author:"Cliff Burke", isbn:"9780063286672", price:"9.99", format:"Paperback", qty:2},
+  {id:"g684", g:"6th-8th", title:"Aru Shah and the End of Time", author:"Roshani Chokshi", isbn:"9781368023566", price:"10.99", format:"Paperback", qty:2},
+  {id:"g685", g:"6th-8th", title:"Asha and the Spirit Bird", author:"Jasbinder Bilan", isbn:"9781338571059", price:"18.99", format:"Hardcover", qty:2},
+  {id:"g686", g:"6th-8th", title:"Dealing with Dragons", author:"Patricia C. Wrede", isbn:"9780544541221", price:"9.99", format:"Paperback", qty:2},
+  {id:"g687", g:"6th-8th", title:"Ellen Outside the Lines", author:"A.J. Sass", isbn:"9780759556294", price:"8.99", format:"Paperback", qty:2},
+  {id:"g688", g:"6th-8th", title:"Mexikid: A Graphic Memoir", author:"Pedro Martin", isbn:"9780593462294", price:"14.99", format:"Paperback", qty:2},
+  {id:"g689", g:"6th-8th", title:"Rain Rising", author:"Courtne Comrie", isbn:"9780063159716", price:"9.99", format:"Paperback", qty:2},
+  {id:"g6810",g:"6th-8th", title:"Remember My Story", author:"Claire Sarnowski and Sarah Durand", isbn:"9780316592857", price:"9.99", format:"Paperback", qty:2},
+  {id:"g6811",g:"6th-8th", title:"Soar", author:"Joan Bauer", isbn:"9780147513151", price:"9.99", format:"Paperback", qty:2},
+  {id:"g6812",g:"6th-8th", title:"Tagging Freedom", author:"Rhonda Roumani", isbn:"9781454950721", price:"8.99", format:"Paperback", qty:2},
+  {id:"g6813",g:"6th-8th", title:"Tumble", author:"Celia C. Perez", isbn:"9780593325186", price:"9.99", format:"Paperback", qty:2},
+  {id:"g6814",g:"6th-8th", title:"Uprooted: A Memoir About What Happens When Your Family Moves Back", author:"Ruth Chan", isbn:"9781250855343", price:"14.99", format:"Paperback", qty:2},
+  {id:"g6815",g:"6th-8th", title:"Carter Avery's Fourth Grade Year", author:"Rob Buyea", isbn:"9780593376218", price:"8.99", format:"Paperback", qty:2},
+  {id:"g6816",g:"6th-8th", title:"The Long Way Around", author:"Anne Nesbet", isbn:"9781536234725", price:"18.99", format:"Hardcover", qty:2},
+  {id:"g6817",g:"6th-8th", title:"Answers to Dog", author:"Pete Hautman", isbn:"9781536244465", price:"9.99", format:"Paperback", qty:2},
+  {id:"g6818",g:"6th-8th", title:"Dough Boys", author:"Paula Chase", isbn:"9780062691828", price:"9.99", format:"Paperback", qty:2},
+  {id:"g6819",g:"6th-8th", title:"Keeper of Lost Cities", author:"Shannon Messenger", isbn:"9781442445949", price:"10.99", format:"Paperback", qty:2},
+  {id:"g6820",g:"6th-8th", title:"El Deafo", author:"Cece Bell", isbn:"9781419712173", price:"15.99", format:"Paperback", qty:2},
+  {id:"g6821",g:"6th-8th", title:"Rain Reign", author:"Ann M. Martin", isbn:"9781250073976", price:"8.99", format:"Paperback", qty:2},
+  {id:"g6822",g:"6th-8th", title:"The Miscalculations of Lightning Girl", author:"Stacy McAnulty", isbn:"9781524767600", price:"8.99", format:"Paperback", qty:2},
+  {id:"g6823",g:"6th-8th", title:"Dirt Bike Racers", author:"Matt Christopher", isbn:"9780316140539", price:"6.99", format:"Paperback", qty:2},
+  {id:"g6824",g:"6th-8th", title:"How to Ride Off-Road Motorcycles", author:"Gary LaPlante", isbn:"9780760342732", price:"32.99", format:"Paperback", qty:2},
+  {id:"g921", g:"9th-12th", title:"Dragon Hoops", author:"Gene Luen Yang", isbn:"9781250363084", price:"19.99", format:"Paperback", qty:2},
+  {id:"g922", g:"9th-12th", title:"Legends & Lattes", author:"Travis Baldree", isbn:"9781250886088", price:"17.99", format:"Paperback", qty:2},
+  {id:"g923", g:"9th-12th", title:"Promise Boys", author:"Nick Brooks", isbn:"9781250362674", price:"12.99", format:"Paperback", qty:2},
+  {id:"g924", g:"9th-12th", title:"Ship Breaker", author:"Paolo Bacigalupi", isbn:"9780316056199", price:"12.99", format:"Paperback", qty:2},
+  {id:"g925", g:"9th-12th", title:"Seven Percent of Ro Devereaux", author:"Ellen O'Clover", isbn:"9780063255043", price:"15.99", format:"Paperback", qty:2},
+  {id:"g926", g:"9th-12th", title:"All My Rage", author:"Sabaa Tahir", isbn:"9780593202364", price:"13.99", format:"Paperback", qty:2},
+  {id:"g927", g:"9th-12th", title:"An Appetite for Miracles", author:"Laekan Zea Kemp", isbn:"9780316461849", price:"11.99", format:"Paperback", qty:2},
+  {id:"g928", g:"9th-12th", title:"A Crane Among Wolves", author:"June Hur", isbn:"9781250858085", price:"12.99", format:"Paperback", qty:2},
+  {id:"g929", g:"9th-12th", title:"Six Crimson Cranes", author:"Elizabeth Lim", isbn:"9780593300947", price:"14.99", format:"Paperback", qty:2},
+  {id:"g9210",g:"9th-12th", title:"The Sunbearer Trials", author:"Aiden Thomas", isbn:"9781250822741", price:"12.99", format:"Paperback", qty:2},
+  {id:"g9211",g:"9th-12th", title:"When We Make It", author:"Elisabet Velasquez", isbn:"9780593324509", price:"13.99", format:"Paperback", qty:2},
+  {id:"sp1", g:"Spanish", title:"¡No dejes que la Paloma conduzca el autobús!", author:"Mo Willems", isbn:"9781423140528", price:"10.99", format:"Hardcover", qty:2},
+  {id:"sp2", g:"Spanish", title:"Clic, clac, muu — Vacas que escriben a maquina", author:"Doreen Cronin", isbn:"9781665927208", price:"8.99", format:"Board Book", qty:2},
+  {id:"sp3", g:"Spanish", title:"El Conejito Knuffle (Knuffle Bunny)", author:"Mo Willems", isbn:"9781423105671", price:"7.99", format:"Paperback", qty:2},
+  {id:"sp4", g:"Spanish", title:"Debo compartir mi helado? — An Elephant and Piggie Book", author:"Mo Willems", isbn:"9781484722916", price:"10.99", format:"Hardcover", qty:2},
+  {id:"sp5", g:"Spanish", title:"Puedo jugar yo tambien? — An Elephant and Piggie Book", author:"Mo Willems", isbn:"9781368021340", price:"10.99", format:"Hardcover", qty:2},
+  {id:"sp6", g:"Spanish", title:"No es facil ser conejo (It's Not Easy Being a Bunny)", author:"Marilyn Sadler", isbn:"9780593711743", price:"9.99", format:"Hardcover", qty:2},
+  {id:"sp7", g:"Spanish", title:"Pete el gato and his magic sunglasses", author:"", isbn:"not available", price:"", format:"", qty:2},
+  {id:"sp9", g:"Spanish", title:"La Academia: The Academy Spanish Language Edition", author:"TZ Layton", isbn:"9781464293146", price:"9.99", format:"Paperback", qty:2},
+  {id:"sp10",g:"Spanish", title:"Hombre Perro se desata (Dog Man Unleashed)(2)", author:"Dav Pilkey", isbn:"9781338233483", price:"12.99", format:"Hardcover", qty:2},
+  {id:"sp11",g:"Spanish", title:"Hombre Perro: Historia de dos gatitos (Dog Man: A Tale of Two Kittens)(3)", author:"Dav Pilkey", isbn:"9781338277708", price:"12.99", format:"Hardcover", qty:2},
+  {id:"sp12",g:"Spanish", title:"Sonrie (Smile)", author:"Raina Telgemeier", isbn:"9781546134114", price:"12.99", format:"Paperback", qty:2},
+  {id:"sp13",g:"Spanish", title:"Hermanas (Sisters)", author:"Raina Telgemeier", isbn:"9781546176527", price:"12.99", format:"Paperback", qty:2},
+  {id:"sp14",g:"Spanish", title:"Pangato: Soy yo", author:"Jim Benton", isbn:"9781338566017", price:"8.99", format:"Paperback", qty:2},
+  {id:"sp15",g:"Spanish", title:"Sobrevivi el ataque de los osos grizzlies, 1967", author:"Lauren Tarshis", isbn:"9781338847956", price:"10.99", format:"Paperback", qty:2},
+  {id:"sp16",g:"Spanish", title:"La Profecia — The Dragonet Prophecy (Alas De Fuego)", author:"Tui Sutherland", isbn:"9788427223516", price:"19.95", format:"Paperback", qty:2},
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────
+let purchases = {}; // { bookId: count_purchased }
+const STORAGE_KEY = "randle_book_drive_v2";
+
+function loadPurchases() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    purchases = data ? JSON.parse(data) : {};
+  } catch(e) { purchases = {}; }
+}
+
+function savePurchases() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(purchases)); }
+  catch(e) { console.error("Save failed", e); }
+}
+
+// ── PROGRESS ─────────────────────────────────────────────────────────────
+function updateProgress() {
+  const totalNeeded = ALL_BOOKS.reduce((s,b) => s + b.qty, 0);
+  const totalDone   = ALL_BOOKS.reduce((s,b) => s + Math.min(purchases[b.id]||0, b.qty), 0);
+  const pct = totalNeeded ? Math.round(totalDone/totalNeeded*100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent =
+    `${totalDone} of ${totalNeeded} books purchased — ${pct}% complete! 🎉`;
+  document.getElementById('progressTotal').textContent = `${totalNeeded} books needed`;
+}
+
+// ── CARD ─────────────────────────────────────────────────────────────────
+function makeCard(book) {
+  const bought = purchases[book.id] || 0;
+  const remaining = Math.max(0, book.qty - bought);
+  const full = remaining === 0;
+  const link = hasBnLink(book.isbn) ? (bnBase + book.isbn) : null;
+
+  // Dots
+  let dots = '';
+  for (let i = 0; i < book.qty; i++) {
+    dots += `<span class="need-dot ${i < bought ? 'done' : 'open'}"></span>`;
+  }
+
+  const needText = full
+    ? `<span style="color:var(--green);font-weight:800;">✅ All ${book.qty} purchased!</span>`
+    : `<span style="color:var(--orange);">Need <strong>${remaining}</strong> more</span>`;
+
+  let actionArea = '';
+  if (full) {
+    actionArea = `
+      <div class="purchased-message">
+        <span class="p-emoji">🎉</span>
+        <div class="p-title">Thank You for Your Donation!</div>
+        <div class="p-sub">This book has been fully purchased.<br>Please choose another book to donate!</div>
+        <button class="choose-another-btn" onclick="scrollToFilters()">👆 Choose Another Book</button>
+      </div>`;
+  } else if (link) {
+    actionArea = `
+      <div class="btn-row">
+        <a class="buy-btn btn-online" href="${link}" target="_blank" rel="noopener">🌐 Buy Online at Barnes &amp; Noble</a>
+        <button class="buy-btn btn-instore" onclick="openModal('${book.id}','instore')">🏪 Purchased In-Store at Cascade Station</button>
+        <button class="buy-btn btn-mark-online" onclick="openModal('${book.id}','online')">✅ Mark as Purchased Online</button>
+      </div>`;
+  } else {
+    actionArea = `<button class="buy-btn btn-unavail">Currently Unavailable</button>`;
+  }
+
+  return `
+    <div class="book-card${full?' fully-purchased':''}" id="card-${book.id}">
+      <div class="book-title">${book.title}</div>
+      ${book.author ? `<div class="book-author">by ${book.author}</div>` : ''}
+      <div class="book-meta">
+        ${book.format?`<span class="tag format">${book.format}</span>`:''}
+        ${book.price?`<span class="tag price">$${book.price}</span>`:''}
+      </div>
+      <div class="need-counter">
+        <div class="need-dots">${dots}</div>
+        ${needText}
+      </div>
+      ${hasBnLink(book.isbn)?`<div class="book-isbn">ISBN: ${book.isbn}</div>`:''}
+      ${actionArea}
+    </div>`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+const GROUPS = [
+  { containerId:'young-english',   hdrId:'hdr-young', filter: b => b.g === 'Young Readers' },
+  { containerId:'grade35-english', hdrId:'hdr-35',    filter: b => b.g === '3rd-5th' },
+  { containerId:'grade68-english', hdrId:'hdr-68',    filter: b => b.g === '6th-8th' },
+  { containerId:'grade912-english',hdrId:'hdr-912',   filter: b => b.g === '9th-12th' },
+  { containerId:'spanish-books',   hdrId:'hdr-sp',    filter: b => b.g === 'Spanish' },
+];
+
+function renderAll() {
+  for (const grp of GROUPS) {
+    const books = ALL_BOOKS.filter(grp.filter);
+    const done  = books.filter(b => (purchases[b.id]||0) >= b.qty).length;
+    document.getElementById(grp.containerId).innerHTML = books.map(makeCard).join('');
+    document.getElementById(grp.hdrId).textContent = `${done}/${books.length} purchased`;
+  }
+  updateProgress();
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+let pendingId = null;
+
+function openModal(bookId, method) {
+  const book = ALL_BOOKS.find(b => b.id === bookId);
+  if (!book) return;
+  pendingId = bookId;
+  const bought = purchases[bookId] || 0;
+  const remaining = book.qty - bought;
+  document.getElementById('modalBookTitle').textContent = book.title;
+  document.getElementById('modalDesc').textContent = method === 'instore'
+    ? `You purchased this in person at Barnes & Noble Cascade Station (Portland, OR). This will mark 1 copy as donated — ${remaining} still needed total.`
+    : `You purchased this online at barnesandnoble.com. This will mark 1 copy as donated — ${remaining} still needed total.`;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalConfirmBtn').onclick = confirmPurchase;
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  pendingId = null;
+}
+
+function confirmPurchase() {
+  const id = pendingId;
+  closeModal();
+  if (!id) return;
+  showLoading("Saving your donation... 💛");
+  loadPurchases(); // get latest before writing
+  const book = ALL_BOOKS.find(b => b.id === id);
+  if (book) {
+    purchases[id] = Math.min((purchases[id]||0) + 1, book.qty);
+    savePurchases();
+  }
+  renderAll();
+  hideLoading();
+  // Scroll to card
+  setTimeout(() => {
+    const card = document.getElementById('card-' + id);
+    if (card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 100);
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────
+function filterBooks(filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+  document.querySelectorAll('.grade-group').forEach(g => {
+    g.classList.toggle('hidden', filter !== 'all' && g.dataset.group !== filter);
+  });
+}
+
+function scrollToFilters() {
+  document.getElementById('filtersSection').scrollIntoView({ behavior:'smooth' });
+}
+
+// ── LOADING ───────────────────────────────────────────────────────────────
+function showLoading(msg) {
+  document.getElementById('loadingText').textContent = msg || 'Loading...';
+  document.getElementById('loadingOverlay').classList.add('open');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('open'); }
+
+// Close modal on backdrop click
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function init() {
+  showLoading("Loading book drive...");
+  loadPurchases();
+  renderAll();
+  hideLoading();
+  // Refresh every 30s so all visitors see updates
+  setInterval(() => { loadPurchases(); renderAll(); }, 30000);
+}
+init();
+</script>
+</body>
+</html>
